@@ -1,0 +1,60 @@
+name: JS Scanner Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls_file_link:
+        description: 'Direct link to the .txt file containing URLs to scan'
+        required: true
+        type: string
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Cache Go Tools
+        id: cache-tools
+        uses: actions/cache@v3
+        with:
+          path: ~/go/bin
+          key: ${{ runner.os }}-go-tools-v1
+
+      - name: Install Httpx
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
+
+      - name: Install Nuclei
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
+
+      - name: Install JSLeak
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: go install github.com/byt3hx/jsleak@latest
+
+      - name: Install GF
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: go install github.com/tomnomnom/gf@latest
+
+      - name: Update PATH
+        run: echo "$HOME/go/bin" >> $GITHUB_PATH
+
+      - name: Setup Gf Patterns
+        run: |
+          mkdir -p ~/.gf
+          wget -q -O ~/.gf/jsvar.json https://raw.githubusercontent.com/1ndianl33t/Gf-Patterns/master/jsvar.json
+
+      - name: Run Pipeline
+        env:
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: |
+          go run main.go -input "${{ github.event.inputs.urls_file_link }}"
