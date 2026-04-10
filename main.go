@@ -48,6 +48,11 @@ func main() {
 		log.Fatalf("Failed to fetch input URL/File: %v", err)
 	}
 
+	if tgToken != "" && tgChatID != "" {
+		startMsg := fmt.Sprintf("🚀 JS Scanner Started!\n✅ Successfully loaded %d URLs from input.\n🔍 Filtering and scanning process initiated...", len(rawURLs))
+		sendMessageToTelegram(tgToken, tgChatID, startMsg)
+	}
+
 	log.Println("[*] Filtering JS files...")
 	filteredURLs := filterJS(rawURLs)
 	if len(filteredURLs) == 0 {
@@ -336,6 +341,34 @@ func sendDocumentToTelegram(token, chatID, filename, caption string) error {
 		return err
 	}
 	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return fmt.Errorf("bad status: %s, response: %s", resp.Status, string(respBody))
+	}
+	return nil
+}
+
+func sendMessageToTelegram(token, chatID, message string) error {
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", token)
+	
+	body, _ := json.Marshal(map[string]string{
+		"chat_id": chatID,
+		"text":    message,
+	})
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
