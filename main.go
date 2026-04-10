@@ -45,6 +45,10 @@ func main() {
 	log.Println("[*] Fetching input file...")
 	rawURLs, err := fetchLines(*inputURL)
 	if err != nil {
+		if tgToken != "" && tgChatID != "" {
+			errMsg := fmt.Sprintf("❌ خطأ يامعلم: لم أتمكن من العثور على ملف %s بداخل المستودع. من فضلك اذهب للمستودع واضغط (Add File) وارفع ملفك وتأكد أن اسمه %s", *inputURL, *inputURL)
+			sendMessageToTelegram(tgToken, tgChatID, errMsg)
+		}
 		log.Fatalf("Failed to fetch input URL/File: %v", err)
 	}
 
@@ -56,6 +60,9 @@ func main() {
 	log.Println("[*] Filtering JS files...")
 	filteredURLs := filterJS(rawURLs)
 	if len(filteredURLs) == 0 {
+		if tgToken != "" && tgChatID != "" {
+			sendMessageToTelegram(tgToken, tgChatID, "⚠️ الملف الذي رفعته لا يحتوي على أي روابط JS صالحة للفحص!")
+		}
 		log.Fatal("No JS URLs found after filtering.")
 	}
 	log.Printf("[*] Found %d matching JS URLs. Running httpx...", len(filteredURLs))
