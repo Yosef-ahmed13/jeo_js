@@ -32,36 +32,20 @@ func main() {
 	inputURL := flag.String("input", "", "URL to the text file containing links")
 	flag.Parse()
 
+	if *inputURL == "" {
+		log.Fatal("Please provide an input URL using -input")
+	}
+
 	tgToken := os.Getenv("TG_BOT_TOKEN")
 	tgChatID := os.Getenv("TG_CHAT_ID")
 	if tgToken == "" || tgChatID == "" {
 		log.Println("Warning: TG_BOT_TOKEN or TG_CHAT_ID is missing. Output will only be saved locally.")
 	}
 
-	var rawURLs []string
-	var err error
-
-	envInput := os.Getenv("INPUT_URLS")
-
-	if *inputURL != "" {
-		log.Println("[*] Fetching input file from URL...")
-		rawURLs, err = fetchLines(*inputURL)
-		if err != nil {
-			log.Fatalf("Failed to fetch input URL: %v", err)
-		}
-	} else if envInput != "" {
-		log.Println("[*] Reading URLs from pasted input...")
-		envInput = strings.ReplaceAll(envInput, "\n", " ")
-		envInput = strings.ReplaceAll(envInput, "\r", " ")
-		envInput = strings.ReplaceAll(envInput, "\t", " ")
-		words := strings.Split(envInput, " ")
-		for _, w := range words {
-			if w != "" {
-				rawURLs = append(rawURLs, strings.TrimSpace(w))
-			}
-		}
-	} else {
-		log.Fatal("Please provide input using -input flag or INPUT_URLS environment variable")
+	log.Println("[*] Fetching input file...")
+	rawURLs, err := fetchLines(*inputURL)
+	if err != nil {
+		log.Fatalf("Failed to fetch input URL: %v", err)
 	}
 
 	log.Println("[*] Filtering JS files...")
