@@ -3,9 +3,10 @@ name: JS Scanner Pipeline
 on:
   workflow_dispatch:
     inputs:
-      raw_urls:
-        description: 'Paste your URLs here (copy and paste them directly)'
+      local_file:
+        description: 'Name of the .txt file in the repository (e.g., urls.txt)'
         required: true
+        default: 'urls.txt'
         type: string
 
 jobs:
@@ -56,6 +57,5 @@ jobs:
         env:
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
-          INPUT_URLS: ${{ github.event.inputs.raw_urls }}
         run: |
-          go run main.go -input=""
+          go run main.go -input="${{ github.event.inputs.local_file }}"

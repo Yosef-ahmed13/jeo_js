@@ -137,15 +137,27 @@ func main() {
 	log.Println("[+] Done!")
 }
 
-func fetchLines(url string) ([]string, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
+func fetchLines(input string) ([]string, error) {
+	var scanner *bufio.Scanner
+	var err error
+
+	if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
+		resp, err := http.Get(input)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+		scanner = bufio.NewScanner(resp.Body)
+	} else {
+		file, err := os.Open(input)
+		if err != nil {
+			return nil, err
+		}
+		defer file.Close()
+		scanner = bufio.NewScanner(file)
 	}
-	defer resp.Body.Close()
 
 	var lines []string
-	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		lines = append(lines, strings.TrimSpace(scanner.Text()))
 	}
