@@ -122,8 +122,6 @@ func main() {
 }
 
 func fetchLines(input string) ([]string, error) {
-	var scanner *bufio.Scanner
-	var err error
 	var rc io.ReadCloser
 
 	if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
@@ -141,7 +139,7 @@ func fetchLines(input string) ([]string, error) {
 	}
 	defer rc.Close()
 
-	scanner = bufio.NewScanner(rc)
+	scanner := bufio.NewScanner(rc)
 	var lines []string
 	for scanner.Scan() {
 		lines = append(lines, strings.TrimSpace(scanner.Text()))
