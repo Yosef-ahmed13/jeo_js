@@ -29,11 +29,11 @@ type NucleiResult struct {
 }
 
 func main() {
-	inputURL := flag.String("input", "", "URL to the text file containing links")
+	inputURL := flag.String("input", "", "Path to the text file containing links (or URL)")
 	flag.Parse()
 
 	if *inputURL == "" {
-		log.Fatal("Please provide an input URL using -input")
+		log.Fatal("Please provide an input URL or File using -input")
 	}
 
 	tgToken := os.Getenv("TG_BOT_TOKEN")
@@ -45,7 +45,7 @@ func main() {
 	log.Println("[*] Fetching input file...")
 	rawURLs, err := fetchLines(*inputURL)
 	if err != nil {
-		log.Fatalf("Failed to fetch input URL: %v", err)
+		log.Fatalf("Failed to fetch input URL/File: %v", err)
 	}
 
 	log.Println("[*] Filtering JS files...")
@@ -122,14 +122,27 @@ func main() {
 }
 
 func fetchLines(input string) ([]string, error) {
-	resp, err := http.Get(input)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
+	var scanner *bufio.Scanner
+	var err error
+	var rc io.ReadCloser
 
+	if strings.HasPrefix(input, "http://") || strings.HasPrefix(input, "https://") {
+		resp, err := http.Get(input)
+		if err != nil {
+			return nil, err
+		}
+		rc = resp.Body
+	} else {
+		file, err := os.Open(input)
+		if err != nil {
+			return nil, err
+		}
+		rc = file
+	}
+	defer rc.Close()
+
+	scanner = bufio.NewScanner(rc)
 	var lines []string
-	scanner := bufio.NewScanner(resp.Body)
 	for scanner.Scan() {
 		lines = append(lines, strings.TrimSpace(scanner.Text()))
 	}
