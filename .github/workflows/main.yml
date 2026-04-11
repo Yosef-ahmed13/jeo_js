@@ -27,10 +27,6 @@ jobs:
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: go install -v github.com/projectdiscovery/httpx/cmd/httpx@latest
 
-      - name: Install Nuclei
-        if: steps.cache-tools.outputs.cache-hit != 'true'
-        run: go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-
       - name: Install JSLeak
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: go install github.com/byt3hx/jsleak@latest

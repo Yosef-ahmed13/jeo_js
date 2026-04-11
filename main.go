@@ -18,15 +18,7 @@ import (
 	"sync"
 )
 
-type NucleiResult struct {
-	TemplateID string `json:"template-id"`
-	Info       struct {
-		Name     string `json:"name"`
-		Severity string `json:"severity"`
-	} `json:"info"`
-	MatchedAt string   `json:"matched-at"`
-	Extracted []string `json:"extracted-results"`
-}
+
 
 func main() {
 	inputURL := flag.String("input", "", "Path to the text file containing links (or URL)")
@@ -84,15 +76,7 @@ func main() {
 
 	writeHeader(reportFile, fmt.Sprintf("Live JS URLs Found: %d", len(liveURLs)))
 
-	// 1. Run Nuclei
-	log.Println("[*] Running Nuclei...")
-	writeHeader(reportFile, "Nuclei Findings")
-	nucleiRes, err := runNuclei(liveURLs)
-	if err != nil {
-		log.Printf("Nuclei error: %v", err)
-	} else {
-		reportFile.WriteString(nucleiRes)
-	}
+
 
 	// 2. Run JSLeak
 	log.Println("[*] Running JSLeak...")
@@ -128,7 +112,7 @@ func main() {
 	// Cleanup
 	os.Remove("live.txt")
 	os.Remove("filtered.txt")
-	os.Remove("nuclei_out.json")
+
 
 	log.Println("[+] Done!")
 }
@@ -195,35 +179,7 @@ func runHttpx(urls []string) ([]string, error) {
 	return live, nil
 }
 
-func runNuclei(urls []string) (string, error) {
-	cmd := exec.Command("nuclei", "-l", "live.txt", "-tags", "exposure,token,creds,endpoints,extract", "-severity", "critical,high,medium,info", "-j", "-o", "nuclei_out.json", "-silent")
-	cmd.Run() // ignore err since nuclei returns error exit status on findings
 
-	data, err := os.ReadFile("nuclei_out.json")
-	if err != nil {
-		return "No Nuclei findings or error reading output.\n\n", nil
-	}
-
-	var results string
-	lines := strings.Split(string(data), "\n")
-	for _, l := range lines {
-		if strings.TrimSpace(l) == "" {
-			continue
-		}
-		var r NucleiResult
-		if err := json.Unmarshal([]byte(l), &r); err == nil {
-			extracted := strings.Join(r.Extracted, ", ")
-			if extracted == "" {
-				extracted = r.Info.Name
-			}
-			results += fmt.Sprintf("[Nuclei] [%s] %s => Found at: %s\n", r.Info.Severity, extracted, r.MatchedAt)
-		}
-	}
-	if results == "" {
-		results = "No Nuclei findings.\n"
-	}
-	return results + "\n", nil
-}
 
 func runJSLeak(urls []string) (string, error) {
 	cmd := exec.Command("jsleak", "-s")
